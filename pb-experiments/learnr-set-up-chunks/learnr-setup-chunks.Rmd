@@ -1,0 +1,144 @@
+---
+title: "Check learnr behavior of different kind of setup chunks"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE)
+nycflights <- nycflights13::flights
+```
+
+## Goal of the Exerpiment
+
+> Code chunks with `exercise=TRUE` are evaluated within standalone environments. This means that they don’t have access to previous computations from within the document. This constraint is imposed so that users can execute exercises in any order (i.e. correct execution of one exercise never depends on completion of a prior exercise).
+
+I am taking ideas and order of arguments from the [learnr webpage](https://rstudio.github.io/learnr/exercises.html#Exercise_Setup).
+
+I want to understand the differences between 
+
+1. global setup
+2. shared setup
+3. exercise specific setup
+4. chain setup chunks
+
+## Global setup
+
+> Code in the global setup chunk is run once at the startup of the tutorial and is shared by all exercises within the tutorial. 
+
+Watch out: **There is only one chunk with the label "setup"!**
+
+Therefore I have added it into the first chunk named "setup". But as far as I know in standard R you can setup options in very chunk with every name!
+
+
+
+```{r filter, exercise=TRUE}
+# Change the filter to select February rather than January
+filter(nycflights, month == 1)
+```
+
+```{r arrange, exercise=TRUE}
+# Change the sort order to Ascending
+arrange(nycflights, desc(arr_delay))
+```
+
+Information from the global setup is also available in standard R chunks!
+
+```{r standard-r-setup-info}
+nycflights
+```
+
+
+## Shared setup
+
+> If you don’t want to rely on global setup but would rather create setup code that’s used by only a handful of exercises you can use the `exercise.setup` chunk attribute to provide the label of another chunk that will perform setup tasks. 
+
+```{r prepare-flights}
+nycflights2013 <- openintro::nycflights
+```
+
+```{r filter-flights, exercise=TRUE, exercise.setup = "prepare-flights"}
+# Change the filter to select February rather than January
+filter(nycflights2013, month == 1)
+```
+
+```{r arrange-flights, exercise=TRUE, exercise.setup = "prepare-flights"}
+# Change the sort order to Ascending
+arrange(nycflights2013, desc(arr_delay))
+```
+
+### Difference exercise and R chunks
+
+Watch out: **The setup information in exercise chunks is not available in standard R chunks!!**
+
+```{r filter-standard-r, eval=FALSE, echo=TRUE}
+# generates error when kniting
+nycflights2013 
+```
+
+But varaibles and values from different R chunks are chained. So there are two types of environment: One are exercise chunks with exercise setup chunks and unique labels and the other are R chunks without or with unique labels.
+
+```{r test1, echo=TRUE}
+var1 <- 1 + 1
+var1
+```
+
+```{r test2, echo=TRUE}
+var2 <- var1 + 1
+var2
+```
+
+## Exercise-specific -setup chunk
+
+`learnr` will automatically associate any chunk with a label in the format <exercise>-setup as a setup chunk specifically associated with <exercise>, where <exercise> is replaced with the label of the exercise chunk. For example, the filter-setup chunk will be used as the setup chunk for the filter exercise:
+
+```{r babies-setup}
+# generate dataframe from the openintro package
+babies <- openintro::babies
+```
+
+```{r babies, exercise=TRUE}
+# show data frame
+babies
+```
+
+## Chained setup chunks
+
+
+You may also chain setup chunks where each setup chunk inherits its parent setup chunk using the exercise.setup chunk option. 
+
+Note: **You must use exercise.setup for chaining. You cannot rely on the -setup suffix labelling scheme.**
+
+`learnr` will keep following the trail of exercise.setup chunks until there are no more chunks to be found. To demonstrate, we can convert the first exercise in the above examples to be another setup chunk called filtered-flights with its exercise.setup=prepare-flights. This will now filter the data and store it and can be referenced inside the arrange exercise:
+
+You will not see the next R chunk because echo=FALSE from the global setup chunk.
+```{r prepare-credits}
+credits <- openintro::credits
+```
+
+If there is not `exercise=TRUE` then you will never see exercise.setup chunks, even if `echo=TRUE`.
+
+```{r prepare-credits-plot, exercise.setup = "prepare-credits", echo=TRUE}
+# prepare credits plot
+library(ggplot2)
+
+p <- ggplot(credits, aes(x = credits)) +
+  geom_histogram(binwidth = 1)
+```
+
+
+```{r plot-credits, exercise=TRUE, exercise.setup = "prepare-credits-plot"}
+# plot credits with result from earlier exercise.setup chunk
+p
+```
+
+But with `exercise=TRUE` you will see exercise.setup chunks, even if `echo=FALSE`.
+
+```{r prepare-credits-plot2, exercise=TRUE, exercise.setup = "prepare-credits", echo=FALSE}
+# prepare credits plot
+p <- ggplot(credits, aes(x = credits)) +
+  geom_histogram(binwidth = 2)
+p
+```
