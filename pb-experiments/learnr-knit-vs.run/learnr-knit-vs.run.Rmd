@@ -1,0 +1,48 @@
+---
+title: "Differences between knit and run code in learnr tutorials"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Goal of the Exerpiment
+
+I want to see the differences between `knit` and `Run All` code.
+
+### Setup
+
+I will create two chunks:
+
+1. The first one creates a variable `var1` and display it.
+2. The second one uses the variable `var1`, creates a second variable `var2` and displays it.
+
+### Procedures
+
+1. Knit document without ever running any chunks.
+2. Run first chunk and knit document.
+3. Run second chunk and knit document.
+4. Change first chunk and knit document.
+5. Change first chunk again and "Run All".
+
+
+```{r var1}
+var1 <- 1 + 1
+var1
+```
+
+```{r var2}
+var2 <- var1 + 10
+var2
+```
+
+### Results
+
+As expected: There is **no difference**. knit (Run Document) creates a new (empty) environment, runs all chunks and knit them.
+
+### Next question
+
+How about setup chunks in learner exercises?. What is their behavior?
